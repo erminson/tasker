@@ -12,7 +12,9 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/erminson/tasker"
 	"github.com/erminson/tasker/internal/config"
+	"github.com/erminson/tasker/pkg/crypto"
 	"github.com/erminson/tasker/pkg/server"
 )
 
@@ -46,6 +48,8 @@ func (a *App) init(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initConfig,
 		a.initServiceProvider,
+		a.initMigration,
+		a.initAdmin,
 		a.initHTTPRouter,
 	}
 
@@ -84,6 +88,35 @@ func (a *App) initHTTPRouter(_ context.Context) error {
 	a.router = router
 
 	return nil
+}
+
+func (a *App) initMigration(ctx context.Context) error {
+	cl := a.sp.DBClient(ctx)
+	return cl.ApplyMigrations(tasker.Migrations)
+}
+
+func (a *App) initAdmin(ctx context.Context) error {
+	repo := a.sp.UserRepository(ctx)
+
+	// TODO: use tx for Count and Save methods
+	count, err := repo.Count(ctx)
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	cfg, err := config.NewAdminConfig()
+	if err != nil {
+		return err
+	}
+
+	login, pass := cfg.Credentials()
+	passHash := crypto.BCrypto(pass)
+
+	return repo.Save(ctx, login, passHash)
 }
 
 func (a *App) runHTTPServer(ctx context.Context) error {
