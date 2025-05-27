@@ -19,9 +19,10 @@ func NewRepository(db db.Driver) repository.UserRepository {
 }
 
 func (a *repo) Count(ctx context.Context) (int, error) {
-	var count int
+	q := `SELECT COUNT(*) FROM users`
 
-	err := a.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&count)
+	var count int
+	err := a.db.QueryRowContext(ctx, q).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -30,20 +31,24 @@ func (a *repo) Count(ctx context.Context) (int, error) {
 }
 
 func (a *repo) Save(ctx context.Context, login, passHash string) error {
-	_, err := a.db.ExecContext(ctx, `
+	q := `
 		INSERT INTO users (login, password_hash)
 		VALUES ($1, $2)
-	`, login, passHash)
+	`
+
+	_, err := a.db.ExecContext(ctx, q, login, passHash)
 
 	return err
 }
 
 func (a *repo) UpdateName(ctx context.Context, id int64, name string) error {
-	_, err := a.db.ExecContext(ctx, `
+	q := `
     	UPDATE users
     	SET name = $1
     	WHERE user_id = $2
-	`, name, id)
+	`
+
+	_, err := a.db.ExecContext(ctx, q, name, id)
 	if err != nil {
 		return err
 	}
@@ -52,11 +57,13 @@ func (a *repo) UpdateName(ctx context.Context, id int64, name string) error {
 }
 
 func (a *repo) UpdatePoints(ctx context.Context, id int64, points int64) error {
-	_, err := a.db.ExecContext(ctx, `
+	q := `
     	UPDATE users
     	SET points = points + $1
     	WHERE user_id = $2
-	`, points, id)
+	`
+
+	_, err := a.db.ExecContext(ctx, q, points, id)
 	if err != nil {
 		return err
 	}
@@ -65,12 +72,14 @@ func (a *repo) UpdatePoints(ctx context.Context, id int64, points int64) error {
 }
 
 func (a *repo) GetTopUsers(ctx context.Context, count int) ([]model.User, error) {
-	rows, err := a.db.QueryContext(ctx, `
+	q := `
 		SELECT user_id, login, name, points, created_at, updated_at
 		FROM users
 		ORDER BY points DESC
 		LIMIT $1
-	`, count)
+	`
+
+	rows, err := a.db.QueryContext(ctx, q, count)
 	if err != nil {
 		return nil, err
 	}
