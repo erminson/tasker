@@ -5,9 +5,14 @@ import (
 	"log"
 	"log/slog"
 
+	apiUser "github.com/erminson/tasker/internal/api/user"
 	"github.com/erminson/tasker/internal/config"
 	"github.com/erminson/tasker/internal/repository"
-	usersRepo "github.com/erminson/tasker/internal/repository/user"
+	taskRepo "github.com/erminson/tasker/internal/repository/task"
+	userRepo "github.com/erminson/tasker/internal/repository/user"
+	"github.com/erminson/tasker/internal/service"
+	"github.com/erminson/tasker/internal/service/task"
+	"github.com/erminson/tasker/internal/service/user"
 	database "github.com/erminson/tasker/pkg/db"
 	"github.com/erminson/tasker/pkg/logger"
 )
@@ -22,6 +27,12 @@ type serviceProvider struct {
 	db database.Driver
 
 	userRepo repository.UserRepository
+	taskRepo repository.TaskRepository
+
+	userService service.UserService
+	taskService service.TaskService
+
+	userApi *apiUser.Implementation
 }
 
 func newServiceProvider(log *slog.Logger) *serviceProvider {
@@ -89,8 +100,39 @@ func (s *serviceProvider) DBClient(_ context.Context) database.Driver {
 
 func (s *serviceProvider) UserRepository(ctx context.Context) repository.UserRepository {
 	if s.userRepo == nil {
-		s.userRepo = usersRepo.NewUserRepository(s.DBClient(ctx))
+		s.userRepo = userRepo.NewRepository(s.DBClient(ctx))
 	}
 
 	return s.userRepo
+}
+func (s *serviceProvider) TaskRepository(ctx context.Context) repository.TaskRepository {
+	if s.taskRepo == nil {
+		s.taskRepo = taskRepo.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.taskRepo
+}
+
+func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
+	if s.userService == nil {
+		s.userService = user.NewService(s.UserRepository(ctx))
+	}
+
+	return s.userService
+}
+
+func (s *serviceProvider) TaskService(ctx context.Context) service.TaskService {
+	if s.taskService == nil {
+		s.taskService = task.NewService(s.TaskRepository(ctx))
+	}
+
+	return s.taskService
+}
+
+func (s *serviceProvider) UserApi(ctx context.Context) *apiUser.Implementation {
+	if s.userApi == nil {
+		s.userApi = apiUser.NewApi(s.UserService(ctx), s.TaskService(ctx))
+	}
+
+	return s.userApi
 }

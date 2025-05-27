@@ -77,13 +77,15 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initHTTPRouter(_ context.Context) error {
+func (a *App) initHTTPRouter(ctx context.Context) error {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprint("Hello World: ", time.Now().Format(time.RFC850))))
-	}).Methods(http.MethodGet)
+	userApi := a.sp.UserApi(ctx)
+	// TODO: transfer setting router to method
+	router.HandleFunc("/users/leaderboard", userApi.LeaderBoard).Methods(http.MethodGet)
+	router.HandleFunc("/users/{id}/task/complete", userApi.CompleteTask).Methods(http.MethodPost)
+	router.HandleFunc("/users", userApi.CreateUser).Methods(http.MethodPost)
+	router.HandleFunc("/users/{id}", userApi.UpdateUser).Methods(http.MethodPatch)
 
 	a.router = router
 
