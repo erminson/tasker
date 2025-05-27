@@ -1,5 +1,6 @@
 .k8s
 .envrc
+.env
 bin/
 ssh-keys/
 .vscode/
@@ -16,6 +17,10 @@ ssh-keys/
 *.dll
 *.so
 *.dylib
+*.bin
+
+tasker
+main
 
 # Test binary, built with `go test -c`
 *.test
