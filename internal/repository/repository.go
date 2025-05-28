@@ -12,6 +12,9 @@ type UserRepository interface {
 	UpdateName(ctx context.Context, id int64, name string) error
 	UpdatePoints(ctx context.Context, id int64, points int64) error
 	GetTopUsers(ctx context.Context, count int) ([]model.User, error)
+	Referrer(ctx context.Context, userID, referrerID int64) error
+	GetUserByLogin(ctx context.Context, login string) (*model.LoginUser, error)
+	GetUserById(ctx context.Context, id int64) (*model.User, error)
 }
 
 type TaskRepository interface {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/erminson/tasker"
 	"github.com/erminson/tasker/internal/config"
+	"github.com/erminson/tasker/internal/rest"
 	"github.com/erminson/tasker/pkg/crypto"
 	"github.com/erminson/tasker/pkg/server"
 )
@@ -73,19 +74,33 @@ func (a *App) initConfig(_ context.Context) error {
 
 func (a *App) initServiceProvider(_ context.Context) error {
 	a.sp = newServiceProvider(a.log)
+	// TODO: refactor
+	a.sp.authMid = rest.NewAuthMiddleware(a.sp.JWTConfig().Secret())
 
 	return nil
 }
 
 func (a *App) initHTTPRouter(ctx context.Context) error {
+	if a.sp.authMid == nil {
+		return fmt.Errorf("auth middleware is nil")
+	}
+
 	router := mux.NewRouter()
+
+	v1public := router.PathPrefix("/api/v1/").Subrouter()
+	v1 := router.PathPrefix("/api/v1/").Subrouter()
+	v1.Use(a.sp.authMid.Middleware)
 
 	userApi := a.sp.UserApi(ctx)
 	// TODO: transfer setting router to method
-	router.HandleFunc("/users/leaderboard", userApi.LeaderBoard).Methods(http.MethodGet)
-	router.HandleFunc("/users/{id}/task/complete", userApi.CompleteTask).Methods(http.MethodPost)
-	router.HandleFunc("/users", userApi.CreateUser).Methods(http.MethodPost)
-	router.HandleFunc("/users/{id}", userApi.UpdateUser).Methods(http.MethodPatch)
+	v1public.HandleFunc("/login", userApi.Login).Methods(http.MethodPost)
+
+	v1public.HandleFunc("/users/leaderboard", userApi.LeaderBoard).Methods(http.MethodGet)
+	v1.HandleFunc("/users/{id}/task/complete", userApi.CompleteTask).Methods(http.MethodPost)
+	v1.HandleFunc("/users/{id}/referrer", userApi.Referrer).Methods(http.MethodPost)
+	v1.HandleFunc("/users", userApi.CreateUser).Methods(http.MethodPost)
+	v1.HandleFunc("/users/{id}", userApi.UpdateUser).Methods(http.MethodPatch)
+	v1.HandleFunc("/users/{id}/status", userApi.UserInfo).Methods(http.MethodGet)
 
 	a.router = router
 

@@ -70,3 +70,38 @@ func (s *userService) GetTopUsers(ctx context.Context, count int) ([]model.User,
 
 	return users, nil
 }
+
+func (s *userService) Referrer(ctx context.Context, userID, referrerID int64) error {
+	return s.repo.Referrer(ctx, userID, referrerID)
+}
+
+func (s *userService) ValidateUser(ctx context.Context, login, password string) (int64, error) {
+	repoUser, err := s.repo.GetUserByLogin(ctx, login)
+	if err != nil {
+		return -1, err
+	}
+
+	return repoUser.Id, crypto.CheckPasswordHash(repoUser.PassHash, password)
+}
+
+func (s *userService) GetUserById(ctx context.Context, id int64) (*model.UserInfo, error) {
+	repoUser, err := s.repo.GetUserById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	name := repoUser.Login
+	if repoUser.Name != nil && *repoUser.Name != "" {
+		name = *repoUser.Name
+	}
+
+	user := model.UserInfo{
+		Name:      name,
+		Login:     repoUser.Login,
+		Points:    repoUser.Points,
+		CreatedAt: repoUser.CreatedAt,
+		UpdatedAt: repoUser.UpdatedAt,
+	}
+
+	return &user, nil
+}

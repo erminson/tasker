@@ -10,6 +10,7 @@ import (
 	"github.com/erminson/tasker/internal/repository"
 	taskRepo "github.com/erminson/tasker/internal/repository/task"
 	userRepo "github.com/erminson/tasker/internal/repository/user"
+	"github.com/erminson/tasker/internal/rest"
 	"github.com/erminson/tasker/internal/service"
 	"github.com/erminson/tasker/internal/service/task"
 	"github.com/erminson/tasker/internal/service/user"
@@ -23,8 +24,10 @@ type serviceProvider struct {
 	pgCfg    config.PGConfig
 	httpCfg  config.HTTPConfig
 	adminCfg config.AdminConfig
+	jwtCfg   config.JWTConfig
 
-	db database.Driver
+	db      database.Driver
+	authMid *rest.AuthMiddleware
 
 	userRepo repository.UserRepository
 	taskRepo repository.TaskRepository
@@ -69,7 +72,7 @@ func (s *serviceProvider) HTTPConfig() config.HTTPConfig {
 	return s.httpCfg
 }
 
-func (s *serviceProvider) AdminConfig() config.PGConfig {
+func (s *serviceProvider) AdminConfig() config.AdminConfig {
 	if s.adminCfg == nil {
 		cfg, err := config.NewAdminConfig()
 		if err != nil {
@@ -80,7 +83,21 @@ func (s *serviceProvider) AdminConfig() config.PGConfig {
 		s.adminCfg = cfg
 	}
 
-	return s.pgCfg
+	return s.adminCfg
+}
+
+func (s *serviceProvider) JWTConfig() config.JWTConfig {
+	if s.jwtCfg == nil {
+		cfg, err := config.NewJWTConfig()
+		if err != nil {
+			log.Fatalf("failed to load jwt config: %s", err.Error())
+			return nil
+		}
+
+		s.jwtCfg = cfg
+	}
+
+	return s.jwtCfg
 }
 
 func (s *serviceProvider) DBClient(_ context.Context) database.Driver {
@@ -131,7 +148,7 @@ func (s *serviceProvider) TaskService(ctx context.Context) service.TaskService {
 
 func (s *serviceProvider) UserApi(ctx context.Context) *apiUser.Implementation {
 	if s.userApi == nil {
-		s.userApi = apiUser.NewApi(s.UserService(ctx), s.TaskService(ctx))
+		s.userApi = apiUser.NewApi(s.UserService(ctx), s.TaskService(ctx), s.authMid)
 	}
 
 	return s.userApi

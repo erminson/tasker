@@ -101,3 +101,52 @@ func (a *repo) GetTopUsers(ctx context.Context, count int) ([]model.User, error)
 
 	return users, nil
 }
+
+func (a *repo) Referrer(ctx context.Context, userID, referrerID int64) error {
+	q := `
+		UPDATE users
+		SET referrer_id = $1
+		WHERE user_id = $2
+	`
+
+	_, err := a.db.ExecContext(ctx, q, referrerID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *repo) GetUserByLogin(ctx context.Context, login string) (*model.LoginUser, error) {
+	q := `
+		SELECT user_id, login, password_hash
+		FROM users 
+		WHERE login = $1
+	`
+
+	var user model.LoginUser
+	err := a.db.QueryRowContext(ctx, q, login).Scan(&user.Id, &user.Login, &user.PassHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (a *repo) GetUserById(ctx context.Context, id int64) (*model.User, error) {
+	q := `
+		SELECT user_id, login, name, points, created_at, updated_at
+		FROM users 
+		WHERE user_id = $1
+	`
+
+	var user model.User
+	err := a.db.QueryRowContext(ctx, q, id).Scan(
+		&user.Id, &user.Login, &user.Name, &user.Points, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

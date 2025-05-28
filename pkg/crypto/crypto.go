@@ -9,3 +9,7 @@ func BCrypto(val string) string {
 	// TODO: alloc
 	return string(res)
 }
+
+func CheckPasswordHash(hash, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+}

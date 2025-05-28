@@ -27,6 +27,12 @@ func (s *Implementation) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = ValidateUser(r.Context(), id)
+	if err != nil {
+		rest.Forbidden(w, err.Error())
+		return
+	}
+
 	err = s.userService.UpdateName(r.Context(), id, user.Name)
 	if err != nil {
 		rest.Internal(w, err)

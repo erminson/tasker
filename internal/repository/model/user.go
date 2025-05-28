@@ -8,3 +8,9 @@ type User struct {
 	Id        int64
 	Points    int64
 }
+
+type LoginUser struct {
+	Login    string
+	PassHash string
+	Id       int64
+}
