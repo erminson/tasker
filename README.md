@@ -1,20 +1,21 @@
 # Tasker API
 
-Tasker — это REST API-сервис на Go, который предоставляет функциональность управления пользователями и заданиями.
+**Tasker** — это REST API-сервис на Go, предоставляющий функциональность управления пользователями, заданиями и реферальной системой.
 
 ---
 
 ## 🚀 Запуск проекта
 
-### Создайте `.env`:
+### 1. Создайте `.env`:
 
 ```bash
-   cd tasker
-   touch .env
+cd tasker
+touch .env
 ```
 
-Содержимое
-```
+Содержимое файла `.env`:
+
+```env
 ADMIN_LOGIN=admin
 ADMIN_PASS=admin
 JWT_SECRET=tasker_secret
@@ -26,76 +27,132 @@ HTTP_HOST=0.0.0.0
 HTTP_PORT=8080
 ```
 
-### Запуск в docker-compose
+### 2. Запуск через Docker Compose
+
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-## API
+API будет доступен по адресу: [http://localhost:8081](http://localhost:8081)
 
-#### /api/v1/login
-* `POST` : Логинизация
+---
+
+## 📋 API
+
+> Все эндпоинты доступны с префиксом `/api/v1`
+
+---
+
+### 🔓 Публичные
+
+#### `POST /api/v1/login` — Авторизация
+
+Request
 ```json
-Request: 
-  {
-    "login": "login",
-    "password: "password"
-  }
+
+{
+  "login": "login",
+  "password": "password"
+}
+```
+
 Response:
-  {
-    "token": "token"
-  }
+```json
+{
+  "token": "token"
+}
 ```
 
-#### /api/v1/users/leaderboard
-* `GET` : Получение лидерборда
-```json
+#### `GET /api/v1/users/leaderboard` — Получение лидерборда
+
 Response:
-  {
-    "users": []
-  }
+```json
+{
+  "users": []
+}
 ```
 
-#### /api/v1/users/:id/task/complete
-* `POST` : Выполение задания
-```json
-Request: 
-  {
-    "name": "name" // join_telegram, follow_twitter, invite_friend, fill_profile
-  }
-```
+---
 
-#### /api/v1/users/:id/referrer
-* `POST` : Привязка одного пользователя к другом
+### 🔐 Приватные (JWT)
 
-#### /api/v1/users
-* `POST` : Создание пользователя
-```json
+#### `POST /api/v1/users/:id/task/complete` — Выполнение задания
+
 Request:
-  {
-      "login": "login",
-      "password: "password"
-  }
+```json
+{
+  "name": "join_telegram"
+}
 ```
 
-#### /api/v1/users/:id
-* `PATCH` : Редактирование пользователя
-```json
+#### `POST /api/v1/users/:id/referrer` — Установка реферера
+
 Request:
-  {
-      "name": "name"
-  }
+```json
+{
+  "referrer_id": "123"
+}
 ```
 
-#### /api/v1/users/:id/status
-* `GET` : Получение информации о пользователе
+#### `POST /api/v1/users` — Создание пользователя
+
+Request:
 ```json
-Response:
-  {
-      "name": "name",
-      "login": "login",
-      "points": "points",
-      "created_at": "created_at",
-      "updated_at": "updated_at",
-  }
+{
+  "login": "login",
+  "password": "password"
+}
 ```
+
+#### `PATCH /api/v1/users/:id` — Обновление пользователя
+
+Request:
+```json
+{
+  "name": "new name"
+}
+```
+
+#### `GET /api/v1/users/:id/status` — Инфо о пользователе
+
+Response:
+```json
+{
+  "name": "name",
+  "login": "login",
+  "points": 100,
+  "created_at": "2024-01-01T12:00:00Z",
+  "updated_at": "2024-01-02T15:30:00Z"
+}
+```
+
+---
+
+## 📅 Примечания
+
+* JWT-токен передаётся через заголовок:
+
+```
+Authorization: Bearer <token>
+```
+
+* База данных инициализируется при первом запуске Docker.
+* Для тестирования подойдёт Postman, Insomnia или `curl`.
+
+---
+
+## ✅ TODO
+
+* [x] REST API для пользователей и заданий
+* [x] JWT-авторизация
+* [x] Docker + PostgreSQL
+* [ ] Swagger документация
+* [ ] Тесты
+* [ ] CI/CD
+* [ ] Ролевой доступ
+
+---
+
+## 📄 Лицензия
+
+MIT License
