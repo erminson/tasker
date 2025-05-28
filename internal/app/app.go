@@ -87,8 +87,8 @@ func (a *App) initHTTPRouter(ctx context.Context) error {
 
 	router := mux.NewRouter()
 
-	v1public := router.PathPrefix("/api/v1/").Subrouter()
-	v1 := router.PathPrefix("/api/v1/").Subrouter()
+	v1public := router.PathPrefix("/api/v1").Subrouter()
+	v1 := router.PathPrefix("/api/v1").Subrouter()
 	v1.Use(a.sp.authMid.Middleware)
 
 	userApi := a.sp.UserApi(ctx)
